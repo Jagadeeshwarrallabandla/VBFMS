@@ -1,51 +1,74 @@
 *{
-    padding: 0px;
-    margin: 0px;
-    
+  padding: 0px;
+  margin: 0px;
+}
+.main-div{
+  display: flex;
+  background-color: white;
 }
 .left-div{
-    height: 100vh;
-    width: 20vw;
-    border: 3px solid rebeccapurple;
-    background-color: aliceblue;
-}
-.right-div {
   height: 100vh;
-  width: 80vw;
-  border: 1px solid red;
-  background-color: aliceblue;
+  width: 17vw;
   display: flex;
   flex-direction: column;
+  align-items: start;
+  padding-top: 50px;
+  gap: 50px;
+  box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+}
+.left-div img{
+  height: 90px;
+  width: 140px;
+  margin-top: -50px;
+  margin-left: -20px;
+
+}
+.left-div .ul-design{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  padding-left: 30px;
+}
+.ul-design ul li{
+  list-style: none;
+  padding: 8px;
+  text-align: center;
+  font-size: medium;
+  font-weight: bold;
+}
+.right-div{
+  width: 83vw;
+  display: flex;
+  flex-direction: column;
+}
+.top-content{
+  height: 13vh;
+  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px;
+  box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
 }
-
-/* Top content - stays at top */
-.top-content {
-width: 80vw;
-  display: flex;
-  justify-content: space-between;
-  padding-left: 35px;
-  padding-right: 35px;
-  gap: 10px;
+.search{
+  padding-right: 15px;
+  padding-top: 10px;
+  font-size: larger;
+  color: blue;
 }
-
-
-.mic-container {
-  flex: 1;
+.settings{
+   font-size: larger;
+   color: blue ;
+}
+.right-div .mic-container{
+  height: 87vh;
+  width: 83vw;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 100px;
 }
-
-.mic {
-  font-size: 58px;
-  color: #333;
-}
-
-.search{
-    font-size: 25px;
-    padding-top: 10px;
-    color: blue;
+span{
+  font-weight: bold;
 }
