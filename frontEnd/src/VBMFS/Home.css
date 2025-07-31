@@ -1,11 +1,14 @@
-*{
-  padding: 0px;
-  margin: 0px;
+* {
+  padding: 0;
+  margin: 0;
 }
-.main-div{
+
+.main-div {
   display: flex;
-  background-color: white;
+  height: 100vh;
+  background-color: whitesmoke;
 }
+
 .left-div{
   height: 100vh;
   width: 17vw;
@@ -61,14 +64,23 @@
    font-size: larger;
    color: blue ;
 }
-.right-div .mic-container{
+.mic-container{
   height: 87vh;
   width: 83vw;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 100px;
+  cursor: pointer;
 }
 span{
   font-weight: bold;
+}
+
+.text-output{
+  display: flex;
+  justify-content: center;
+  font-size: 18px;
+  color: Red;
+  margin-top: -230px;
 }
