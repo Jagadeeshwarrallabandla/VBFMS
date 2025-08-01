@@ -2,13 +2,15 @@
   padding: 0;
   margin: 0;
 }
-
 .main-div {
   display: flex;
   height: 100vh;
-  background-color: whitesmoke;
+  background-color: white;
 }
-
+h3{
+  font-style: italic;
+  color: purple;
+}
 .left-div{
   height: 100vh;
   width: 17vw;
@@ -40,6 +42,10 @@
   text-align: center;
   font-size: medium;
   font-weight: bold;
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+.ul-design ul li:hover{
+  transform: scale(1.1);
 }
 .right-div{
   width: 83vw;
@@ -58,29 +64,50 @@
   padding-right: 15px;
   padding-top: 10px;
   font-size: larger;
-  color: blue;
+  color: purple;
 }
 .settings{
    font-size: larger;
-   color: blue ;
+   color: purple;
 }
-.mic-container{
-  height: 87vh;
-  width: 83vw;
+.mic {
+  flex: 1;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  font-size: 100px;
-  cursor: pointer;
 }
+
+.mic-container {
+  height: 150px;
+  width: 150px;
+  border-radius: 50%;
+  background-color: #f2f2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.mic-container:hover {
+  background-color: #1b1a1a;
+  transform: scale(1.1);
+}
+
+.mic-container i {
+  font-size: 80px;
+  color: black;
+  color: rebeccapurple;
+}
+
 span{
   font-weight: bold;
 }
 
-.text-output{
-  display: flex;
-  justify-content: center;
+.text-output {
+  margin-top: 20px; 
   font-size: 18px;
-  color: Red;
-  margin-top: -230px;
+  color: red;
+  text-align: center;
 }
