@@ -48,8 +48,9 @@ const Home = () => {
         });
 
         const data = await res.json();
-        console.log("✅ Backend response:", data);
+        console.log("Backend response:", data);
 
+        // Conditions if File not handled correctly
         if (data.message) {
           setBackend(`✅ ${data.message}`);
         } else if (data.error) {
@@ -65,7 +66,7 @@ const Home = () => {
 
     recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
-      setBackend(`❌ Speech recognition error: ${event.error}`);
+      setBackend(`❌ Please On your : ${event.error}`);
     };
 
     recognition.start();
