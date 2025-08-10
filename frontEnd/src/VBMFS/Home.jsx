@@ -6,17 +6,37 @@ const Home = () => {
   const [text, setText] = useState('');
   const [backend, setBackend] = useState('');
 
-  // Extract file name from voice command
-  const extractFileName = (command) => {
-    const lower = command.toLowerCase();
-    if (lower.includes('move') && lower.includes('to')) {
-      const parts = lower.split('move')[1].split('to');
-      return parts[0]?.trim(); // extract filename
+  // Extract filename, main folder, and subfolder from voice command
+  const parseVoiceCommand = (command) => {
+    let lower = command.toLowerCase();
+    let filename = "";
+    let mainfolder = "";
+    let subfolder = "";
+
+    // Split by "move" and "to"
+    if (lower.includes("move") && lower.includes("to")) {
+      let afterMove = lower.split("move")[1].trim();
+      let parts = afterMove.split("to");
+
+      filename = parts[0]?.trim();
+
+      // Check for subfolder phrases
+      if (parts[1]?.includes("and place it on")) {
+        let mainAndSub = parts[1].split("and place it on");
+        mainfolder = mainAndSub[0]?.trim();
+        subfolder = mainAndSub[1]?.trim();
+      } else if (parts[1]?.includes(" in ")) {
+        let mainAndSub = parts[1].split(" in ");
+        mainfolder = mainAndSub[0]?.trim();
+        subfolder = mainAndSub[1]?.trim();
+      } else {
+        mainfolder = parts[1]?.trim();
+      }
     }
-    return null;
+
+    return { filename, mainfolder, subfolder };
   };
 
-  // Voice recording + backend communication
   const voiceRecording = () => {
     if (!('webkitSpeechRecognition' in window)) {
       alert('Speech recognition not supported in this browser.');
@@ -30,43 +50,41 @@ const Home = () => {
     recognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript;
       setText(transcript);
-      console.log("Recognized Speech:", transcript);
+      console.log("🎙 Recognized:", transcript);
 
-      const filename = extractFileName(transcript);
-      if (!filename) {
-        setBackend("Couldn't identify file name from your voice.");
+      const { filename, mainfolder, subfolder } = parseVoiceCommand(transcript);
+
+      if (!filename || !mainfolder) {
+        setBackend("❌ Could not identify file or folder from your voice.");
         return;
       }
 
       try {
-        const res = await fetch('http://localhost:5000/MoveFilesource_Folder', {
+        const res = await fetch('http://localhost:5000/move_file', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filename }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, mainfolder, subfolder })
         });
 
         const data = await res.json();
-        console.log("Backend response:", data);
+        console.log("Backend Response:", data);
 
-        // Conditions if File not handled correctly
         if (data.message) {
           setBackend(`✅ ${data.message}`);
         } else if (data.error) {
           setBackend(`❌ ${data.error}`);
         } else {
-          setBackend('❓ No proper response from backend.');
+          setBackend("❓ No proper response from backend.");
         }
       } catch (err) {
-        console.error('❌ Error communicating with backend:', err);
-        setBackend('❌ Failed to fetch from backend.');
+        console.error("Fetch Error:", err);
+        setBackend("❌ Failed to fetch from backend.");
       }
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      setBackend(`❌ Please On your : ${event.error}`);
+      console.error("Speech Recognition Error:", event.error);
+      setBackend(`❌ Speech error: ${event.error}`);
     };
 
     recognition.start();
