@@ -6,21 +6,35 @@ const Home = () => {
   const [text, setText] = useState('');
   const [backend, setBackend] = useState('');
 
-  // Extract filename, main folder, and subfolder from voice command
+ // Variables to store file, Folder, and Create Folder Name
   const parseVoiceCommand = (command) => {
-    let lower = command.toLowerCase();
+    let lower = command.toLowerCase(); 
+    let action = "";
     let filename = "";
+    let foldername = "";
     let mainfolder = "";
     let subfolder = "";
 
-    // Split by "move" and "to"
-    if (lower.includes("move") && lower.includes("to")) {
+    // Creating File 
+    if (lower.startsWith("create")) {
+      action = "create";
+      // Split after the word 'create'
+      let afterCreate = lower.split("create")[1].trim();
+      let parts = afterCreate.split(" on ");
+
+      foldername = parts[0]?.trim();
+      mainfolder = parts[1]?.trim();  
+    }
+
+    // Moving Command Condition
+    if (lower.startsWith("move")) {
+      action = "move";
       let afterMove = lower.split("move")[1].trim();
       let parts = afterMove.split("to");
 
       filename = parts[0]?.trim();
 
-      // Check for subfolder phrases
+      // Check if there is a "subfolder" 
       if (parts[1]?.includes("and place it on")) {
         let mainAndSub = parts[1].split("and place it on");
         mainfolder = mainAndSub[0]?.trim();
@@ -34,9 +48,10 @@ const Home = () => {
       }
     }
 
-    return { filename, mainfolder, subfolder };
+    return { action, filename, foldername, mainfolder, subfolder };
   };
 
+  //Voice Recording Function
   const voiceRecording = () => {
     if (!('webkitSpeechRecognition' in window)) {
       alert('Speech recognition not supported in this browser.');
@@ -52,33 +67,65 @@ const Home = () => {
       setText(transcript);
       console.log("🎙 Recognized:", transcript);
 
-      const { filename, mainfolder, subfolder } = parseVoiceCommand(transcript);
+      const { action, filename, foldername, mainfolder, subfolder } = parseVoiceCommand(transcript);
 
-      if (!filename || !mainfolder) {
-        setBackend("❌ Could not identify file or folder from your voice.");
-        return;
+     // Moving Condition Command
+      if (action === "move") {
+        if (!filename || !mainfolder) {
+          setBackend("❌ Could not identify file or folder from your voice.");
+          return;
+        }
+
+        try {
+          const res = await fetch('http://localhost:5000/move_file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, mainfolder, subfolder })
+          });
+
+          const data = await res.json();
+          console.log("Backend Response:", data);
+
+          if (data.message) setBackend(data.message);
+          else if (data.error) setBackend(data.error);
+          else setBackend("❓ No proper response from backend.");
+        } catch (err) {
+          console.error("Fetch Error:", err);
+          setBackend("❌ Failed to fetch from backend.");
+        }
       }
 
-      try {
-        const res = await fetch('http://localhost:5000/move_file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename, mainfolder, subfolder })
-        });
-
-        const data = await res.json();
-        console.log("Backend Response:", data);
-
-        if (data.message) {
-          setBackend(`✅ ${data.message}`);
-        } else if (data.error) {
-          setBackend(`❌ ${data.error}`);
-        } else {
-          setBackend("❓ No proper response from backend.");
+      // Create Action Command
+      else if (action === "create") {
+        if (!foldername || !mainfolder) {
+          setBackend("❌ Could not identify folder name or main folder from your voice.");
+          return;
         }
-      } catch (err) {
-        console.error("Fetch Error:", err);
-        setBackend("❌ Failed to fetch from backend.");
+
+        try {
+          const res = await fetch('http://localhost:5000/create_folder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ foldername, mainfolder })
+          });
+
+          const data = await res.json();
+          console.log("Backend Response:", data);
+
+          if (data.message) setBackend(data.message);
+          else if (data.error) setBackend(data.error);
+          else setBackend("❓ No proper response from backend.");
+        } catch (err) {
+          console.error("Fetch Error:", err);
+          setBackend("❌ Failed to fetch from backend.");
+        }
+      }
+
+      /**
+       * ❌ If neither MOVE nor CREATE command
+       */
+      else {
+        setBackend("❌ Command not recognized. Please say 'move' or 'create'.");
       }
     };
 

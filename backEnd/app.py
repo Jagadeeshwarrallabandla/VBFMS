@@ -15,21 +15,40 @@ def move_file():
         main_folder = data.get('mainfolder', '').strip()
         sub_folder = data.get('subfolder', '').strip()
 
-        # Source is Downloads folder
+        # Map spoken main folder names to actual folder names
+        folder_map = {
+            "desktop": "Desktop",
+            "desk": "Desktop",
+            "documents": "Documents",
+            "document": "Documents",
+            "pictures": "Pictures",
+            "picture": "Pictures",
+            "downloads": "Downloads",
+            "download": "Downloads"
+        }
+        main_folder = folder_map.get(main_folder.lower(), main_folder)
+
+        # Source is Downloads
         source_dir = os.path.join(os.path.expanduser("~"), "Downloads")
 
-        # OneDrive base path (adjust if your OneDrive folder has a different name)
+        # OneDrive base path
         onedrive_path = os.path.join(os.path.expanduser("~"), "OneDrive")
 
         if not os.path.exists(onedrive_path):
             return jsonify({'error': f'OneDrive folder not found at {onedrive_path}'}), 404
 
-        # Destination folder
+        # Capitalize each word in subfolder for matching
+        if sub_folder:
+            sub_folder = " ".join(word.capitalize() for word in sub_folder.split())
+
+        # Destination folder path
         destination_dir = os.path.join(onedrive_path, main_folder)
         if sub_folder:
             destination_dir = os.path.join(destination_dir, sub_folder)
 
-        os.makedirs(destination_dir, exist_ok=True)
+        # Ensure destination exists
+        if not os.path.exists(destination_dir):
+            return jsonify({'error': f'❌ Destination folder "{destination_dir}" does not exist.'}), 404
 
         # Match file ignoring spaces and case
         matched_file = None
@@ -50,9 +69,56 @@ def move_file():
         shutil.move(source_file_path, destination_file_path)
 
         return jsonify({
-            'message': f'{matched_file} moved successfully to {main_folder}{"/" + sub_folder if sub_folder else ""}'
+            'message': f'✅ {matched_file} moved successfully to {main_folder}/{sub_folder}'
         }), 200
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+# ---------------- CREATE FOLDER ROUTE ----------------
+@app.route('/create_folder', methods=['POST'])
+def create_folder():
+    data = request.get_json()
+
+    folder_name = data.get('foldername', '').strip()
+    main_folder = data.get('mainfolder', '').strip()
+
+    if not folder_name or not main_folder:
+        return jsonify({'error': 'Folder name and main folder are required'}), 400
+
+    # Capitalize each word for proper formatting
+    formatted_foldername = " ".join(word.capitalize() for word in folder_name.split())
+
+    # Map common speech variations for main folder
+    folder_map = {
+        "desktop": "Desktop",
+        "desk": "Desktop",
+        "documents": "Documents",
+        "document": "Documents",
+        "pictures": "Pictures",
+        "picture": "Pictures",
+        "downloads": "Downloads",
+        "download": "Downloads"
+    }
+    main_folder = folder_map.get(main_folder.lower(), main_folder)
+
+    # OneDrive base path
+    onedrive_path = os.path.join(os.path.expanduser("~"), "OneDrive")
+
+    # Destination main folder
+    destination_dir = os.path.join(onedrive_path, main_folder)
+
+    # ✅ Use formatted_foldername in path so actual folder is created with capitalized words
+    new_folder_path = os.path.join(destination_dir, formatted_foldername)
+    print(f"Newly Created Folder name is {formatted_foldername} in {main_folder}")
+
+    try:
+        os.makedirs(new_folder_path, exist_ok=False)  # Fail if already exists
+        return jsonify({'message': f'✅ Folder "{formatted_foldername}" created successfully in {main_folder}.'})
+    except FileExistsError:
+        return jsonify({'error': f'❌ Folder "{formatted_foldername}" already exists in {main_folder}.'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
