@@ -6,27 +6,28 @@ const Home = () => {
   const [text, setText] = useState('');
   const [backend, setBackend] = useState('');
 
- // Variables to store file, Folder, and Create Folder Name
+  // Parse voice command into structured data
   const parseVoiceCommand = (command) => {
-    let lower = command.toLowerCase(); 
+    let lower = command.toLowerCase();
     let action = "";
     let filename = "";
     let foldername = "";
     let mainfolder = "";
     let subfolder = "";
+    let oldname = "";
+    let newname = "";
+    let folderpath = "";
 
-    // Creating File 
+    // Create command
     if (lower.startsWith("create")) {
       action = "create";
-      // Split after the word 'create'
       let afterCreate = lower.split("create")[1].trim();
       let parts = afterCreate.split(" on ");
-
       foldername = parts[0]?.trim();
-      mainfolder = parts[1]?.trim();  
+      mainfolder = parts[1]?.trim();
     }
 
-    // Moving Command Condition
+    // Move command
     if (lower.startsWith("move")) {
       action = "move";
       let afterMove = lower.split("move")[1].trim();
@@ -34,7 +35,6 @@ const Home = () => {
 
       filename = parts[0]?.trim();
 
-      // Check if there is a "subfolder" 
       if (parts[1]?.includes("and place it on")) {
         let mainAndSub = parts[1].split("and place it on");
         mainfolder = mainAndSub[0]?.trim();
@@ -48,10 +48,30 @@ const Home = () => {
       }
     }
 
-    return { action, filename, foldername, mainfolder, subfolder };
+    // Rename command
+    if (lower.startsWith("rename")) {
+      action = "rename";
+      // Format: rename oldname to newname from folderpath
+      let afterRename = lower.split("rename")[1].trim();
+      let parts = afterRename.split(" to ");
+
+      oldname = parts[0]?.trim();
+
+      if (parts[1]?.includes(" from ")) {
+        let newAndFolder = parts[1].split(" from ");
+
+        // Converting Reanem File to Title Case
+       newname = newAndFolder[0]?.trim().split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
+
+    folderpath = newAndFolder[1]?.trim();
+  }
+}
+
+    return { action, filename, foldername, mainfolder, subfolder, oldname, newname, folderpath };
   };
 
-  //Voice Recording Function
+  // Voice recording function
   const voiceRecording = () => {
     if (!('webkitSpeechRecognition' in window)) {
       alert('Speech recognition not supported in this browser.');
@@ -67,9 +87,9 @@ const Home = () => {
       setText(transcript);
       console.log("🎙 Recognized:", transcript);
 
-      const { action, filename, foldername, mainfolder, subfolder } = parseVoiceCommand(transcript);
+      const { action, filename, foldername, mainfolder, subfolder, oldname, newname, folderpath } = parseVoiceCommand(transcript);
 
-     // Moving Condition Command
+      // Move command
       if (action === "move") {
         if (!filename || !mainfolder) {
           setBackend("❌ Could not identify file or folder from your voice.");
@@ -95,7 +115,7 @@ const Home = () => {
         }
       }
 
-      // Create Action Command
+      // Create command
       else if (action === "create") {
         if (!foldername || !mainfolder) {
           setBackend("❌ Could not identify folder name or main folder from your voice.");
@@ -121,11 +141,35 @@ const Home = () => {
         }
       }
 
-      /**
-       * ❌ If neither MOVE nor CREATE command
-       */
+      // Rename command
+      else if (action === "rename") {
+        if (!oldname || !newname || !folderpath) {
+          setBackend("❌ Could not identify old name, new name, or folder from your voice.");
+          return;
+        }
+
+        try {
+          const res = await fetch('http://localhost:5000/rename_file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ old_name: oldname, new_name: newname, folder: folderpath })
+          });
+
+          const data = await res.json();
+          console.log("Backend Response:", data);
+
+          if (data.message) setBackend(data.message);
+          else if (data.error) setBackend(data.error);
+          else setBackend("❓ No proper response from backend.");
+        } catch (err) {
+          console.error("Fetch Error:", err);
+          setBackend("❌ Failed to fetch from backend.");
+        }
+      }
+
+      // Undeclared  command
       else {
-        setBackend("❌ Command not recognized. Please say 'move' or 'create'.");
+        setBackend("❌ Command not recognized. Please say 'move', 'create', or 'rename'.");
       }
     };
 

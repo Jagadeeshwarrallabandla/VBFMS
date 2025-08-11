@@ -15,7 +15,7 @@ def move_file():
         main_folder = data.get('mainfolder', '').strip()
         sub_folder = data.get('subfolder', '').strip()
 
-        # Map spoken main folder names to actual folder names
+        # Spoken Words Correct sentence words
         folder_map = {
             "desktop": "Desktop",
             "desk": "Desktop",
@@ -28,7 +28,7 @@ def move_file():
         }
         main_folder = folder_map.get(main_folder.lower(), main_folder)
 
-        # Source is Downloads
+        # Source  Downloads
         source_dir = os.path.join(os.path.expanduser("~"), "Downloads")
 
         # OneDrive base path
@@ -76,8 +76,7 @@ def move_file():
         return jsonify({'error': str(e)}), 500
 
 
-
-# ---------------- CREATE FOLDER ROUTE ----------------
+# Creating Folder Route Function
 @app.route('/create_folder', methods=['POST'])
 def create_folder():
     data = request.get_json()
@@ -104,13 +103,13 @@ def create_folder():
     }
     main_folder = folder_map.get(main_folder.lower(), main_folder)
 
-    # OneDrive base path
+    # OneDrive  path
     onedrive_path = os.path.join(os.path.expanduser("~"), "OneDrive")
 
     # Destination main folder
     destination_dir = os.path.join(onedrive_path, main_folder)
 
-    # ✅ Use formatted_foldername in path so actual folder is created with capitalized words
+    #  Use formatted_foldername in path so actual folder is created with capitalized words
     new_folder_path = os.path.join(destination_dir, formatted_foldername)
     print(f"Newly Created Folder name is {formatted_foldername} in {main_folder}")
 
@@ -121,6 +120,46 @@ def create_folder():
         return jsonify({'error': f'❌ Folder "{formatted_foldername}" already exists in {main_folder}.'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+# Rename Route Function
+@app.route('/rename_file', methods=['POST'])
+def rename_file():
+    data = request.json
+    old_name = data.get('old_name', "").strip()
+    new_name = data.get('new_name', "").strip()
+    folder_path_spoken = data.get('folder', "").strip()
+
+    if not old_name or not new_name or not folder_path_spoken:
+        return jsonify({"message": "Missing old_name, new_name, or folder"}), 400
+
+    # Convert spoken path to actual system path
+    base_dir = os.path.expanduser("~")  # User home
+    folder_parts = [part.strip().title() for part in folder_path_spoken.split("/")]
+    folder_path = os.path.join(base_dir, *folder_parts)
+
+    if not os.path.exists(folder_path):
+        return jsonify({"message": f"Folder '{folder_path_spoken}' not found."}), 404
+
+    # Search for file
+    found_file = None
+    for file in os.listdir(folder_path):
+        name, ext = os.path.splitext(file)
+        if name.lower() == old_name.lower():
+            found_file = file
+            break
+
+    if not found_file:
+        return jsonify({"message": f"File '{old_name}' not found in {folder_path_spoken}."}), 404
+
+    # Build rename paths
+    old_path = os.path.join(folder_path, found_file)
+    new_path = os.path.join(folder_path, new_name + os.path.splitext(found_file)[1])
+
+    if os.path.exists(new_path):
+        return jsonify({"message": f"A file named '{new_name}' already exists in {folder_path_spoken}."}), 409
+
+    os.rename(old_path, new_path)
+    return jsonify({"message": f"✅ '{found_file}' renamed to '{os.path.basename(new_path)}' successfully."})
 
 
 if __name__ == '__main__':
