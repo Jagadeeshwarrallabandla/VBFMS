@@ -27,31 +27,33 @@ const Home = () => {
       mainfolder = parts[1]?.trim();
     }
 
-    // Move command
-    if (lower.startsWith("move")) {
-      action = "move";
-      let afterMove = lower.split("move")[1].trim();
-      let parts = afterMove.split("to");
+// Move command
+if (lower.startsWith("move")) {
+  action = "move";
+  let afterMove = lower.split("move")[1].trim();
+  let parts = afterMove.split("to");
 
-      filename = parts[0]?.trim();
+  filename = parts[0]?.trim();
 
-      if (parts[1]?.includes("and place it on")) {
-        let mainAndSub = parts[1].split("and place it on");
-        mainfolder = mainAndSub[0]?.trim();
-        subfolder = mainAndSub[1]?.trim();
-      } else if (parts[1]?.includes(" in ")) {
-        let mainAndSub = parts[1].split(" in ");
-        mainfolder = mainAndSub[0]?.trim();
-        subfolder = mainAndSub[1]?.trim();
-      } else {
-        mainfolder = parts[1]?.trim();
-      }
-    }
+  if (parts[1]?.includes("and place it on")) {
+    let mainAndSub = parts[1].split("and place it on");
+    // FIX: mainfolder is before 'and place it on', subfolder is after
+    mainfolder = mainAndSub[0]?.trim();
+    subfolder = mainAndSub[1]?.trim();
+  } else if (parts[1]?.includes(" in ")) {
+    let mainAndSub = parts[1].split(" in ");
+    // FIX: mainfolder is before 'in', subfolder is after
+    mainfolder = mainAndSub[0]?.trim();
+    subfolder = mainAndSub[1]?.trim();
+  } else {
+    mainfolder = parts[1]?.trim();
+  }
+}
+
 
     // Rename command
     if (lower.startsWith("rename")) {
       action = "rename";
-      // Format: rename oldname to newname from folderpath
       let afterRename = lower.split("rename")[1].trim();
       let parts = afterRename.split(" to ");
 
@@ -59,14 +61,30 @@ const Home = () => {
 
       if (parts[1]?.includes(" from ")) {
         let newAndFolder = parts[1].split(" from ");
+        newname = newAndFolder[0]?.trim().split(" ")
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
+        folderpath = newAndFolder[1]?.trim();
+      }
+    }
 
-        // Converting Reanem File to Title Case
-       newname = newAndFolder[0]?.trim().split(" ")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
+    // Delete command
+    if (lower.startsWith("delete")) {
+      action = "delete";
 
-    folderpath = newAndFolder[1]?.trim();
-  }
-}
+      if (lower.includes(" in ") && lower.includes(" from ")) {
+        let beforeIn = lower.split(" in ")[0].replace("delete", "").trim();
+        let afterIn = lower.split(" in ")[1];
+        let mainAndSub = afterIn.split(" from ");
+
+        filename = beforeIn;
+        mainfolder = mainAndSub[0]?.trim();
+        subfolder = mainAndSub[1]?.trim();
+      } else if (lower.includes(" from ")) {
+        let parts = lower.split(" from ");
+        filename = parts[0].replace("delete", "").trim();
+        mainfolder = parts[1]?.trim();
+      }
+    }
 
     return { action, filename, foldername, mainfolder, subfolder, oldname, newname, folderpath };
   };
@@ -167,9 +185,43 @@ const Home = () => {
         }
       }
 
-      // Undeclared  command
+      // Updated Delete Command
+      else if (action === "delete") {
+        if (!filename || !mainfolder) {
+          setBackend("❌ Could not identify file or folder from your voice.");
+          return;
+        }
+
+        try {
+          const res = await fetch('http://localhost:5000/delete_file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename,
+              mainfolder,
+              subfolder: subfolder || ""
+            })
+          });
+
+          const data = await res.json();
+          console.log("Backend Response:", data);
+
+          if (data.message) {
+            setBackend(data.message );
+          } else if (data.error) {
+            setBackend(data.error);
+          } else {
+            setBackend("❓ No proper response from backend.");
+          }
+        } catch (err) {
+          console.error("Fetch Error:", err);
+          setBackend("❌ Failed to fetch from backend.");
+        }
+      }
+
+      // Unrecognized command
       else {
-        setBackend("❌ Command not recognized. Please say 'move', 'create', or 'rename'.");
+        setBackend("❌ Command not recognized. Please say 'move', 'create', 'rename', or 'delete'.");
       }
     };
 
@@ -220,3 +272,4 @@ const Home = () => {
 };
 
 export default Home;
+
